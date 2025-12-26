@@ -1,0 +1,231 @@
+#THIS IS A FILE CONSISTING OF ALL THE STEP REQUIRED TO RUN CNN ON GOOGLE COLAB FOLLOW EACH STEP CAREFULLY
+
+====================================================
+CNN EXECUTION GUIDE (ANACONDA + CMD + NGROK)
+====================================================
+
+PROJECT CONTEXT:
+----------------
+This CNN model was trained using an older version of Keras.
+Therefore, it must be executed in a legacy TensorFlow environment
+using Anaconda and cannot be reliably run in Google Colab.
+
+CNN FILE:
+---------
+cnn64.h5
+
+CNN LOCATION:
+-------------
+C:\Users\kavya\Downloads\models\Core\cnn64.h5
+
+====================================================
+PART 1: ANACONDA ENVIRONMENT SETUP
+====================================================
+
+STEP 1: Open Anaconda Prompt
+----------------------------
+Search "Anaconda Prompt" in Start Menu and open it.
+
+You should see:
+(base) C:\Users\kavya>
+
+----------------------------------------------------
+
+STEP 2: Create Legacy Environment (ONE TIME ONLY)
+-------------------------------------------------
+conda create -n legacy_cnn python=3.8 -y
+
+----------------------------------------------------
+
+STEP 3: Activate Environment (EVERY TIME)
+-----------------------------------------
+conda activate legacy_cnn
+
+Expected prompt:
+(legacy_cnn) C:\Users\kavya>
+
+----------------------------------------------------
+
+STEP 4: Install Required Packages (ONE TIME ONLY)
+-------------------------------------------------
+pip install tensorflow==2.6.0 keras==2.6.0 protobuf==3.20.3 numpy==1.19.5 h5py==3.1.0 flask
+
+----------------------------------------------------
+
+STEP 5: Navigate to CNN Directory
+---------------------------------
+cd C:\Users\kavya\Downloads\models\Core
+
+Verify files:
+dir
+
+You MUST see:
+cnn64.h5
+
+====================================================
+PART 2: LOAD AND TEST CNN (PYTHON)
+====================================================
+
+STEP 6: Start Python Interpreter
+--------------------------------
+python
+
+You must see:
+Python 3.8.x
+>>>
+
+----------------------------------------------------
+
+STEP 7: Load CNN Model
+---------------------
+from tensorflow.keras.models import load_model
+
+cnn = load_model(
+    r"C:\Users\kavya\Downloads\models\Core\cnn64.h5",
+    compile=False
+)
+
+cnn.summary()
+
+----------------------------------------------------
+
+STEP 8: (OPTIONAL) Compile CNN
+------------------------------
+cnn.compile(
+    optimizer="adam",
+    loss="binary_crossentropy",
+    metrics=["accuracy"]
+)
+
+----------------------------------------------------
+
+STEP 9: Test CNN Prediction
+---------------------------
+import numpy as np
+
+X = np.random.rand(1, 64, 64, 1)
+pred = cnn.predict(X)
+print("CNN Prediction:", pred)
+
+----------------------------------------------------
+
+STEP 10: Exit Python
+--------------------
+exit()
+
+====================================================
+PART 3: RUN CNN AS FLASK API
+====================================================
+
+STEP 11: Create Flask Server File
+--------------------------------
+Create a file named:
+
+cnn_server.py
+
+Location:
+C:\Users\kavya\Downloads\models\Core\cnn_server.py
+
+Paste the following code:
+
+--------------------------------
+from flask import Flask, request, jsonify
+import numpy as np
+from tensorflow.keras.models import load_model
+
+app = Flask(__name__)
+
+cnn = load_model(
+    r"C:\Users\kavya\Downloads\models\Core\cnn64.h5",
+    compile=False
+)
+
+@app.route("/predict", methods=["POST"])
+def predict():
+    image = np.array(request.json["image"], dtype=np.float32)
+    image = image.reshape(1, 64, 64, 1)
+    score = cnn.predict(image)[0][0]
+    return jsonify({"cnn_score": float(score)})
+
+if __name__ == "__main__":
+    app.run(port=5000)
+--------------------------------
+
+----------------------------------------------------
+
+STEP 12: Run Flask Server
+------------------------
+conda activate legacy_cnn
+cd C:\Users\kavya\Downloads\models\Core
+python cnn_server.py
+
+Expected output:
+Running on http://127.0.0.1:5000
+
+DO NOT CLOSE THIS WINDOW
+
+====================================================
+PART 4: NGROK SETUP (CMD PROMPT)
+====================================================
+
+STEP 13: Download ngrok
+----------------------
+Download from:
+https://ngrok.com/download
+
+Extract ngrok.exe to:
+C:\ngrok\ngrok.exe
+
+----------------------------------------------------
+
+STEP 14: Add ngrok Auth Token (ONE TIME ONLY)
+---------------------------------------------
+ngrok config add-authtoken YOUR_AUTH_TOKEN
+
+----------------------------------------------------
+
+STEP 15: Start ngrok Tunnel (NEW CMD WINDOW)
+--------------------------------------------
+cd C:\ngrok
+ngrok http 5000
+
+Expected output:
+Forwarding https://xxxx.ngrok-free.app -> http://localhost:5000
+
+COPY the HTTPS URL
+
+====================================================
+PART 5: GOOGLE COLAB CONNECTION
+====================================================
+
+STEP 16: Use ngrok URL in Google Colab
+-------------------------------------
+import requests
+import numpy as np
+
+CNN_API = "https://xxxx.ngrok-free.app/predict"
+
+X_img = np.random.rand(64, 64, 1)
+
+response = requests.post(
+    CNN_API,
+    json={"image": X_img.tolist()}
+)
+
+p_cnn = response.json()["cnn_score"]
+print("CNN Malware Probability:", p_cnn)
+
+====================================================
+PART 6: FINAL ENSEMBLE (COLAB)
+====================================================
+
+final_score = (p_cnn + p_grams + p_dll + p_seq) / 4
+
+if final_score >= 0.5:
+    print("FINAL RESULT: MALWARE")
+else:
+    print("FINAL RESULT: BENIGN")
+
+====================================================
+END OF FILE
+====================================================
